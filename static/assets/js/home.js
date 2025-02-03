@@ -1,220 +1,186 @@
-let inFrame;
+document.addEventListener("DOMContentLoaded", function () {
+  // Step 1: Create the black overlay to block page interactions
+  const blackOverlay = document.createElement("div");
+  blackOverlay.style.position = "fixed";
+  blackOverlay.style.top = "0";
+  blackOverlay.style.left = "0";
+  blackOverlay.style.width = "100%";
+  blackOverlay.style.height = "100%";
+  blackOverlay.style.backgroundColor = "black";
+  blackOverlay.style.zIndex = "9998"; // Ensure it is below the disclaimer
+  blackOverlay.style.pointerEvents = "none"; // Allow interaction with the disclaimer buttons
 
-try {
-  inFrame = window !== top;
-} catch (e) {
-  inFrame = true;
-}
-if (!localStorage.getItem("ab")) localStorage.setItem("ab", true);
-if (
-  !inFrame &&
-  !navigator.userAgent.includes("Firefox") &&
-  localStorage.getItem("ab") === "true"
-) {
-  const popup = open("about:blank", "_blank");
-  if (!popup || popup.closed) {
-    alert(
-      "Please allow popups for this site. Doing so will allow us to open the site in a about:blank tab and preventing this site from showing up in your history. You can turn this off in the site settings.",
-    );
-  } else {
-    const doc = popup.document;
-    const iframe = doc.createElement("iframe");
-    const style = iframe.style;
-    const link = doc.createElement("link");
+  // Step 2: Create the disclaimer at the bottom of the page
+  const disclaimer = document.createElement("div");
+  disclaimer.style.position = "fixed";
+  disclaimer.style.bottom = "0";
+  disclaimer.style.left = "0";
+  disclaimer.style.width = "100%";
+  disclaimer.style.backgroundColor = "#f8d7da";
+  disclaimer.style.padding = "10px";
+  disclaimer.style.textAlign = "center";
+  disclaimer.style.color = "#721c24";
+  disclaimer.style.zIndex = "9999"; // Ensure it's above the overlay
+  disclaimer.style.boxSizing = "border-box";
 
-    const name = localStorage.getItem("name") || "My Drive - Google Drive";
-    const icon =
-      localStorage.getItem("icon") ||
-      "https://ssl.gstatic.com/docs/doclist/images/drive_2022q3_32dp.png";
+  disclaimer.innerHTML = `
+    <p>By logging in, you acknowledge and agree to all terms and conditions as stated at 
+      <a href="https://bit.ly/3DGc1qW" target="_blank">https://bit.ly/3DGc1qW</a>. Unauthorized access or violation of these terms may result in legal action. Please review the terms carefully before proceeding.
+    </p>
+    <button id="agreeBtn">Agree</button>
+    <button id="disagreeBtn">Disagree</button>
+  `;
 
-    doc.title = name;
-    link.rel = "icon";
-    link.href = icon;
+  // Step 3: Append the black overlay and disclaimer to the body
+  document.body.appendChild(blackOverlay);
+  document.body.appendChild(disclaimer);
 
-    iframe.src = location.href;
-    style.position = "fixed";
-    style.top = style.bottom = style.left = style.right = 0;
-    style.border = style.outline = "none";
-    style.width = style.height = "100%";
+  // Disable all page interactions until the user agrees
+  document.body.style.pointerEvents = "none";
 
-    doc.head.appendChild(link);
-    doc.body.appendChild(iframe);
+  // Get the "Agree" and "Disagree" buttons
+  const agreeBtn = document.getElementById("agreeBtn");
+  const disagreeBtn = document.getElementById("disagreeBtn");
 
-    const pLink = localStorage.getItem(encodeURI("pLink")) || getRandomUrl();
-    location.replace(pLink);
+  // Make sure the buttons are clickable
+  agreeBtn.style.pointerEvents = "auto";
+  disagreeBtn.style.pointerEvents = "auto";
 
-    const script = doc.createElement("script");
-    script.textContent = `
-      window.onbeforeunload = function (event) {
-        const confirmationMessage = 'Leave Site?';
-        (event || window.event).returnValue = confirmationMessage;
-        return confirmationMessage;
-      };
-    `;
-    doc.head.appendChild(script);
+  // Handle the "Agree" button click event
+  agreeBtn.addEventListener("click", function () {
+    // Hide the disclaimer and black overlay
+    disclaimer.style.display = "none";
+    blackOverlay.style.display = "none";
+
+    // Re-enable interactions with the page
+    document.body.style.pointerEvents = "auto";
+  });
+
+  // Handle the "Disagree" button click event
+  disagreeBtn.addEventListener("click", function () {
+    // Redirect the user to Google if they disagree
+    window.location.href = "https://www.google.com";
+  });
+
+  // Step 4: Splash text (random messages displayed)
+  const splashTexts = [
+    "Over 8 Million Users since 2023",
+    "Fastest growing proxy server",
+    "Made by xBubbo",
+    "Check out discord.gg/interstellar :)",
+    "Thanks for using the site",
+    "Follow us on Tiktok (@useinterstellar)",
+    "Subscribe to us on YouTube (@unblocking)",
+    "Subscribe to my Youtube (@xbubbo)",
+    "Check out the settings page",
+    "Check out our Patreon (https://www.patreon.com/gointerstellar)",
+  ];
+
+  let splashIndex = Math.floor(Math.random() * splashTexts.length);
+  const splashElement = document.getElementById("splash");
+
+  // Function to update splash text on click
+  function updateSplashText() {
+    splashIndex = (splashIndex + 1) % splashTexts.length;
+    splashElement.innerText = splashTexts[splashIndex];
   }
-}
-// Particles
-document.addEventListener("DOMContentLoaded", event => {
+
+  // Display the first splash text and add event listener to change on click
+  splashElement.innerText = splashTexts[splashIndex];
+  splashElement.addEventListener("click", updateSplashText);
+
+  // Step 5: Random URL function to redirect on certain actions
+  function getRandomUrl() {
+    const randomUrls = [
+      "https://kahoot.it",
+      "https://classroom.google.com",
+      "https://drive.google.com",
+      "https://google.com",
+      "https://docs.google.com",
+      "https://slides.google.com",
+      "https://www.nasa.gov",
+      "https://blooket.com",
+      "https://clever.com",
+      "https://edpuzzle.com",
+      "https://khanacademy.org",
+      "https://wikipedia.org",
+      "https://dictionary.com",
+    ];
+    return randomUrls[Math.floor(Math.random() * randomUrls.length)];
+  }
+
+  // Step 6: Handle popups if needed (conditional script for specific user actions)
+  const inFrame = window !== top;
+  const userAgent = navigator.userAgent;
+
+  if (!inFrame && !userAgent.includes("Firefox")) {
+    const popup = open("about:blank", "_blank");
+
+    if (!popup || popup.closed) {
+      // Log a message instead of showing an alert
+      console.log("Please ensure popups are allowed to proceed.");
+    } else {
+      const doc = popup.document;
+      const iframe = doc.createElement("iframe");
+      iframe.style.position = "fixed";
+      iframe.style.top =
+        iframe.style.bottom =
+        iframe.style.left =
+        iframe.style.right =
+          "0";
+      iframe.style.border = iframe.style.outline = "none";
+      iframe.style.width = iframe.style.height = "100%";
+
+      const link = doc.createElement("link");
+      const name = localStorage.getItem("name") || "My Drive - Google Drive";
+      const icon =
+        localStorage.getItem("icon") ||
+        "https://ssl.gstatic.com/docs/doclist/images/drive_2022q3_32dp.png";
+
+      doc.title = name;
+      link.rel = "icon";
+      link.href = icon;
+
+      iframe.src = location.href;
+      doc.head.appendChild(link);
+      doc.body.appendChild(iframe);
+
+      const pLink = localStorage.getItem("pLink") || getRandomUrl();
+      location.replace(pLink);
+
+      const script = doc.createElement("script");
+      script.textContent = `
+        window.onbeforeunload = function(event) {
+          const confirmationMessage = 'Leave Site?';
+          (event || window.event).returnValue = confirmationMessage;
+          return confirmationMessage;
+        };
+      `;
+      doc.head.appendChild(script);
+    }
+  }
+
+  // Step 7: Particles animation (if enabled by user)
   if (window.localStorage.getItem("Particles") === "true") {
     const particlesConfig = {
       particles: {
-        number: {
-          value: 200,
-          density: {
-            enable: true,
-            value_area: 600,
-          },
-        },
-        color: {
-          value: "#ffffff",
-        },
-        shape: {
-          type: "circle",
-          stroke: {
-            width: 0,
-            color: "#000000",
-          },
-          polygon: {
-            nb_sides: 5,
-          },
-          image: {
-            src: "img/github.svg",
-            width: 100,
-            height: 100,
-          },
-        },
-        opacity: {
-          value: 1,
-          random: true,
-          anim: {
-            enable: false,
-            speed: 1,
-            opacity_min: 0.1,
-            sync: false,
-          },
-        },
-        size: {
-          value: 3,
-          random: true,
-          anim: {
-            enable: false,
-            speed: 40,
-            size_min: 0.1,
-            sync: false,
-          },
-        },
-        line_linked: {
-          enable: false,
-          distance: 150,
-          color: "#ffffff",
-          opacity: 0.4,
-          width: 1,
-        },
-        move: {
-          enable: true,
-          speed: 2,
-          direction: "bottom",
-          random: true,
-          straight: false,
-          out_mode: "out",
-          bounce: false,
-          attract: {
-            enable: false,
-            rotateX: 600,
-            rotateY: 1200,
-          },
-        },
+        number: { value: 200, density: { enable: true, value_area: 600 } },
+        color: { value: "#ffffff" },
+        shape: { type: "circle", stroke: { width: 0, color: "#000000" } },
+        opacity: { value: 1, random: true },
+        size: { value: 3, random: true },
+        line_linked: { enable: false },
+        move: { enable: true, speed: 2, random: true, out_mode: "out" },
       },
       interactivity: {
-        detect_on: "canvas",
         events: {
-          onhover: {
-            enable: true,
-            mode: "repulse",
-          },
-          onclick: {
-            enable: false,
-            mode: "push",
-          },
-          resize: true,
+          onhover: { enable: true, mode: "repulse" },
+          onclick: { enable: false, mode: "push" },
         },
-        modes: {
-          grab: {
-            distance: 400,
-            line_linked: {
-              opacity: 1,
-            },
-          },
-          bubble: {
-            distance: 400,
-            size: 40,
-            duration: 2,
-            opacity: 8,
-            speed: 3,
-          },
-          repulse: {
-            distance: 40,
-            duration: 0.4,
-          },
-          push: {
-            particles_nb: 4,
-          },
-          remove: {
-            particles_nb: 2,
-          },
-        },
+        modes: { repulse: { distance: 40, duration: 0.4 } },
       },
       retina_detect: true,
     };
     particlesJS("particles-js", particlesConfig);
   }
 });
-// Splash texts
-const SplashT = [
-  "Over 8 Million Users since 2023",
-  "Fastest growing proxy server",
-  "Made by xBubbo",
-  "Check out discord.gg/interstellar :)",
-  "Thanks for using the site",
-  "Follow us on Tiktok (@useinterstellar)",
-  "Subscribe to us on YouTube (@unblocking)",
-  "Subscribe to my Youtube (@xbubbo)",
-  "Check out the settings page",
-  "Check out our Patreon (https://www.patreon.com/gointerstellar)",
-];
-
-let SplashI = Math.floor(Math.random() * SplashT.length);
-const SplashE = document.getElementById("splash");
-
-function US() {
-  SplashI = (SplashI + 1) % SplashT.length;
-  SplashE.innerText = SplashT[SplashI];
-}
-
-SplashE.innerText = SplashT[SplashI];
-
-SplashE.addEventListener("click", US);
-// Random URL
-function getRandomUrl() {
-  const randomUrls = [
-    "https://kahoot.it",
-    "https://classroom.google.com",
-    "https://drive.google.com",
-    "https://google.com",
-    "https://docs.google.com",
-    "https://slides.google.com",
-    "https://www.nasa.gov",
-    "https://blooket.com",
-    "https://clever.com",
-    "https://edpuzzle.com",
-    "https://khanacademy.org",
-    "https://wikipedia.org",
-    "https://dictionary.com",
-  ];
-  return randomUrls[randRange(0, randomUrls.length)];
-}
-
-function randRange(min, max) {
-  return Math.floor(Math.random() * (max - min) + min);
-}
